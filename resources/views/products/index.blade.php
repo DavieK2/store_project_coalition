@@ -20,7 +20,7 @@
                     <h4 class="text-center" style="font-weight: 800">Add New Product</h4>
         
                     <div class="row mt-5" style="display: flex; justify-content: center">      
-                        <form id="create-form" style="font-weight: 600" method="POST">
+                        <form id="create-form" style="font-weight: 600" method="POST" data-status="create">
                             @csrf
                             @if (session()->has('error'))
                                 <div class="alert alert-danger text-center" role="alert">
@@ -76,19 +76,11 @@
                             <th scope="col">Price Per Item</th>
                             <th scope="col">Datetime Submitted</th>
                             <th scope="col">Total value number</th>
+                            <th>Actions</th>
                           </tr>
                         </thead>
                         <tbody id="products">
-                            @foreach ($products as $index => $product)
-                                <tr>
-                                    <td>{{ $index + 1 }}</td>
-                                    <td>{{ $product->product_name }}</td>
-                                    <td>{{ $product->qty }}</td>
-                                    <td>{{ $product->price }}</td>
-                                    <td>{{ $product->created_at }}</td>
-                                    <td>{{ $product->qty *  $product->price }}</td>
-                                </tr>
-                            @endforeach
+                            @include('products.list', compact('products') )
                         </tbody>
                       </table>
                 </div>
@@ -101,15 +93,39 @@
         <script>
 
             let create = document.getElementById('create-form');
+            let productId;
 
             create.addEventListener('submit', (e) => {
+
+                e.preventDefault();
+
+                let status = document.getElementById('create-form').getAttribute('data-status');
+
+                if( status === 'create') createProduct();
+                if( status === 'update') updateProduct();                
+                
+            })
+
+            const edit = (name, qty, price, id) => {
+
+                productId = id;
+
+                document.getElementById('product_name').value = name;
+                document.getElementById('qty').value = qty;
+                document.getElementById('price').value = price;
+                document.getElementById('submit').innerText = 'Update Product';
+                document.getElementById('create-form').setAttribute('data-status', 'update');
+            }
+
+
+            const createProduct = () => {
 
                 let submit = document.getElementById('submit');
 
                 submit.disabled = true;
                 submit.innerText = 'Adding Product...'
                 
-                e.preventDefault();
+             
 
                 $.ajax({
                     headers: {
@@ -129,13 +145,47 @@
                         });
 
                         submit.disabled = false;
-                        submit.innerText = 'Adding New Product';
+                        submit.innerText = 'Add New Product';
                     }
                 });
-            })
+            }
 
+            const updateProduct = () => {
 
+                let submit = document.getElementById('submit');
 
+                submit.disabled = true;
+                submit.innerText = 'Updating Product...'
+                
+                $.ajax({
+                    headers: {
+                        'X-CSRF-TOKEN': "{{ csrf_token() }}"
+                    },
+                    method: 'POST',
+                    url: '/product/update/'+productId,
+                    data: $("#create-form").serialize(),
+                    success: function(data) {
+
+                        $.ajax({
+                            method: 'GET',
+                            url: '/products',
+                            success: function(data) {
+                                document.getElementById('products').innerHTML = data;
+                            }
+                        });
+
+                        document.getElementById('product_name').value = '';
+                        document.getElementById('qty').value = '';
+                        document.getElementById('price').value = '';
+
+                        submit.disabled = false;
+                        submit.innerText = 'Add New Product';
+                        document.getElementById('create-form').setAttribute('data-status', 'create');
+                    }   
+                });
+
+            }
+        
         </script>
 
 </body>

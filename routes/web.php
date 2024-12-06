@@ -10,6 +10,7 @@ Route::get('/', fn() => view('products.index', ['products' => Product::orderBy('
 Route::controller(ProductController::class)->group( function(){
 
     Route::post('/product/create', 'store');
+    Route::post('/product/update/{product}', 'update');
     Route::get('/products', 'getProducts');
 
 });
